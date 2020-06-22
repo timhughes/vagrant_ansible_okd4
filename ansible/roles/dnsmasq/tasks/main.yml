@@ -7,6 +7,7 @@
   vars:
     packages:
       - dnsmasq
+      - NetworkManager-glib
 
 - name: Copy in dnsmasq config
   copy:
@@ -25,3 +26,12 @@
     state: started
     enabled: "yes"
 
+- name:
+  nmcli:
+    conn_name: "System eth0"
+    dns4: 127.0.0.1
+    type: ethernet
+    state: present
+  when: '"127.0.0.1" not in ansible_dns.nameservers'
+  notify:
+    - restart_NetworkManager

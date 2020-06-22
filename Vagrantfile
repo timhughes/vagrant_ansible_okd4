@@ -94,7 +94,7 @@ Vagrant.configure("2") do |config|
   end
 
   (0..2).each do |node_num|
-    config.vm.define "compute#{node_num}", autostart: false do |node|
+    config.vm.define "worker#{node_num}", autostart: false do |node|
       node.vm.network :private_network,
         :libvirt__network_name => 'openshift-internal',
         :libvirt__dhcp_enabled => false

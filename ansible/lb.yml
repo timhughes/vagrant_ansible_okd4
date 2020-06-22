@@ -3,7 +3,6 @@
   become: true
   roles:
     - dnsmasq
-    - traefik
+    - haproxy
+    # - traefik
     - httpd
-
-

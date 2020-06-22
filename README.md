@@ -91,11 +91,11 @@ I think you can add a corporate CA certificate in the insta;l;-config.yaml
 Creating the Kubernetes manifest and Ignition config files
 
     openshift-install create manifests --dir=webroot/os_ignition
-    
+
     sed -i 's/  mastersSchedulable: true/  mastersSchedulable: false/g' webroot/os_ignition/manifests/cluster-scheduler-02-config.yml
-    
+
     openshift-install create ignition-configs --dir=webroot/os_ignition
-    
+
 
 
 
@@ -111,23 +111,22 @@ Download the install images into `webroot/images/`
     )
 
 
-Add the pxeboot files 
-
-    sudo dnf install -y syslinux-nonlinux
-    cp /usr/share/syslinux/{pxelinux.0,ldlinux.c32} webroot/
-
 
 Start the first vagrant server that will become the Loadbalancer and DHCP/DNS
 server. That should build and get provisioned by ansible:
 
     vagrant up lb
 
+<!--
 - https://traefik.192.168.100.2.xip.io:8443/dashboard/
 
-Username:password is test:test or test1:test1 
+Username:password is test:test or test1:test1
+-->
+
 
 Start a web server locally with `./webroot` as the root directory. The simplest
-way is to use the webserver built into python.
+way is to use the webserver built into python. This web server serves the ipxe
+configs and all the installation files.
 
     python -m http.server --directory ./webroot 8000
 
@@ -179,10 +178,10 @@ When it has finished installing you can ssh to the machine using the ssh key
 created earlier
 
     ssh -i ssh_key/id_ed25519 core@192.168.100.5
-    
+
 Start the rest of the machines:w
- 
-    
+
+
     vagrant up /cp[0-9]/
     vagrant up /compute[0-9]/
 
@@ -190,11 +189,15 @@ Start the rest of the machines:w
     openshift-install --dir=webroot/os_ignition wait-for bootstrap-complete --log-level=info
 
 
-#### Need to regenerate configs with new domain
 
 
 ## Notes
 
+use haproxy.cnf
+
+set resolv.conf on lb
+
+https://console-openshift-console.apps.kube1.vm.test/
 
 
 https://servicesblog.redhat.com/2019/07/11/installing-openshift-4-1-using-libvirt-and-kvm/
