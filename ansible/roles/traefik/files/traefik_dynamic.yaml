@@ -1,0 +1,53 @@
+---
+## Dynamic configuration
+
+http:
+  routers:
+    api:
+      entryPoints:
+        - "traefik_api"
+      # rule: "HostRegexp(`traefik.*.*`)"
+      rule: "PathPrefix(`/api`) || PathPrefix(`/dashboard`)"
+      service: "api@internal"
+      tls: {}
+      middlewares:
+        - auth
+  middlewares:
+    auth:
+      basicAuth:
+        users:
+          - "test:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/"
+          - "test2:$apr1$d9hr9HBB$4HxwgUir3HP4EsggP/QNo0"
+
+tcp:
+  routers:
+    control_plane_router:
+      entryPoints:
+        - "os_api"
+      rule: "HostSNI(`*`)"
+      service: "os_api_service"
+      #tls:
+      #  passthrough: true
+    machine_config_router:
+      entryPoints:
+        - "machine_config"
+      rule: "HostSNI(`*`)"
+      service: "machine_config_service"
+      #tls:
+      #  passthrough: true
+
+  services:
+    os_api_service:
+      loadBalancer:
+        servers:
+          - address: "192.168.100.10:6443"
+          - address: "192.168.100.11:6443"
+          - address: "192.168.100.12:6443"
+          - address: "192.168.100.5:6443"  # bootstrap
+    machine_config_service:
+      loadBalancer:
+        servers:
+          - address: "192.168.100.10:22623"
+          - address: "192.168.100.11:22623"
+          - address: "192.168.100.12:22623"
+          - address: "192.168.100.5:22623"  # bootstrap

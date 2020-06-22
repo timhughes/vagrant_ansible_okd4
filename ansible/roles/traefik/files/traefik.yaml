@@ -1,0 +1,31 @@
+---
+## Static configuration
+accessLog: {}
+
+entryPoints:
+  os_api:
+    address: ":6443"
+  machine_config:
+    address: ":22623"
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+  traefik_api:
+    address: ":8443"
+
+api:
+  # Dashboard
+  #
+  # Optional
+  # Default: true
+  #
+  dashboard: true
+  # insecure: true
+
+
+providers:
+  # Enable the file provider to define routers / middlewares / services in file
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true 

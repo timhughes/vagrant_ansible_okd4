@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if command -v traefik; then 
+    INSTALLED_VERSION=$(traefik version|grep Version|awk '{print "v"$2}')
+else
+    INSTALLED_VERSION='v0.0.0'
+fi
+
+LATEST_VERSION=`curl -sq https://api.github.com/repos/containous/traefik/releases/latest|jq -r .tag_name`
+if [ $INSTALLED_VERSION != $LATEST_VERSION ]; then
+    echo $INSTALLED_VERSION $LATEST_VERSION
+    curl -sLO https://github.com/containous/traefik/releases/download/${LATEST_VERSION}/traefik_${LATEST_VERSION}_linux_amd64.tar.gz
+    tar -xf traefik_${LATEST_VERSION}_linux_amd64.tar.gz
+    mv traefik /usr/local/bin/
+    rm -f traefik_${LATEST_VERSION}_linux_amd64.tar.gz
+    exit 100
+fi
+

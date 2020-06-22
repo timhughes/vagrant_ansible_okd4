@@ -1,0 +1,15 @@
+#!ipxe
+
+chain --autofree boot.ipxe.cfg ||
+
+
+:coreos-stable
+echo Booting RHCOS Control Plane
+kernel ${rhcos-kernel-url}
+initrd ${rhcos-initrd-url}
+imgargs ${rhcos-kernel} ip=dhcp rd.neednet=1 initrd=${rhcos-initrd-url}  console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=${rhcos-image-url} coreos.inst.ignition_url=${base-url}/${ignition-path}/master.ign
+boot
+
+
+
+

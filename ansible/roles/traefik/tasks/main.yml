@@ -1,0 +1,100 @@
+---
+
+- name: Install EPEL
+  yum:
+    name: "{{ packages }}"
+    state: present
+    update_cache: "yes"
+  vars:
+    packages:
+      - epel-release
+
+
+- name: Install packages
+  yum:
+    name: "{{ packages }}"
+    state: present
+    update_cache: "yes"
+  vars:
+    packages:
+      - jq
+
+- name: Copy in traefik-install-latest script
+  copy:
+    src: traefik-install-latest
+    dest: /usr/local/bin/traefik-install-latest
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install latest traefik
+  shell: /usr/local/bin/traefik-install-latest
+  register: traefik_install_latest
+  environment:
+    PATH: /usr/local/bin:{{ ansible_env.PATH }}
+  args:
+    chdir: /tmp/
+  failed_when:
+    - traefik_install_latest.rc != 0 and traefik_install_latest.rc != 100
+  changed_when:
+    - traefik_install_latest.rc == 100
+
+
+- name: Set cap_net_bind_service on /usr/local/bin/traefik
+  capabilities:
+    path: /usr/local/bin/traefik
+    capability: cap_net_bind_service+ep
+    state: present
+
+- name: Add traefik system user
+  user:
+    name: traefik
+    comment: Traefik Load balancer
+    system: "yes"
+
+
+- name: Create /etc/traefik and /etc/traefik/dynamic directories
+  file:
+    path: /etc/traefik/dynamic
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy in systemd traefik.service
+  copy:
+    src: traefik.service
+    dest: /etc/systemd/system/traefik.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart_traefik
+
+- name: Copy in /etc/traefik/traefik.yaml
+  copy:
+    src: traefik.yaml
+    dest: /etc/traefik/traefik.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart_traefik
+
+- name: Copy in /etc/traefik/dynamic/traefik_dynamic.yaml
+  copy:
+    src: traefik_dynamic.yaml
+    dest: /etc/traefik/dynamic/traefik_dynamic.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart_traefik
+
+- name: Start Traefik
+  service:
+    name: traefik
+    state: started
+    enabled: "yes"
+
+

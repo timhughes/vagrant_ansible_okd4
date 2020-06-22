@@ -1,0 +1,27 @@
+---
+- name: Install dnsmasq
+  yum:
+    name: "{{ packages }}"
+    state: present
+    update_cache: "yes"
+  vars:
+    packages:
+      - dnsmasq
+
+- name: Copy in dnsmasq config
+  copy:
+    src: openshift.conf
+    dest: /etc/dnsmasq.d/openshift.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - restart_dnsmasq
+
+- name: Start service dnsmasq, if not started
+  service:
+    name: dnsmasq
+    daemon_reload: "yes"
+    state: started
+    enabled: "yes"
+
