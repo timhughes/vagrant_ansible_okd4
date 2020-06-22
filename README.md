@@ -145,32 +145,13 @@ You can follow along using virt-manager and by following the logs on the load ba
 After a short while you should see the following in the weblogs
 
     Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.0 HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /ldlinux.c32 HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/01-52-54-00-a8-64-05 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A86405 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A8640 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A864 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A86 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A8 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0A HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C0 HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] code 404, message File not found
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/C HTTP/1.1" 404 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /pxelinux.cfg/default HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /images/rhcos-4.4.3-x86_64-installer-kernel-x86_64 HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:08] "GET /images/rhcos-4.4.3-x86_64-installer-initramfs.x86_64.img HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:24] "HEAD /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:24] "GET /os_ignition/bootstrap.ign HTTP/1.1" 200 -
-    192.168.100.5 - - [19/Jun/2020 01:46:24] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /bootstrap.ipxe HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /boot.ipxe.cfg HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /images/rhcos-4.4.3-x86_64-installer-kernel-x86_64 HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /images/rhcos-4.4.3-x86_64-installer-initramfs.x86_64.img HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:39:03] "HEAD /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /os_ignition/bootstrap.ign HTTP/1.1" 200 -
+    192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
 
 
 
@@ -183,13 +164,14 @@ Start the rest of the machines:w
 
 
     vagrant up /cp[0-9]/
-    vagrant up /compute[0-9]/
 
+Wait a while
 
     openshift-install --dir=webroot/os_ignition wait-for bootstrap-complete --log-level=info
 
 
 
+    vagrant up /worker[0-9]/
 
 ## Notes
 
