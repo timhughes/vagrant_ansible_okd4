@@ -1,8 +1,0 @@
-# vim: set ft= ts=4 sw=4 tw=2000 et
-DEFAULT pxeboot
-TIMEOUT 20
-PROMPT 0
-LABEL pxeboot
-    KERNEL images/rhcos-4.4.3-x86_64-installer-kernel-x86_64
-    APPEND ip=dhcp rd.neednet=1 initrd=http://192.168.100.1:8000/images/rhcos-4.4.3-x86_64-installer-initramfs.x86_64.img  console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=http://192.168.100.1:8000/images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz coreos.inst.ignition_url=http://192.168.100.1:8000/os_ignition/bootstrap.ign 
-IPAPPEND 2
