@@ -123,6 +123,20 @@ server. That should build and get provisioned by ansible:
 
     vagrant up lb
 
+
+The loadoadbalancer machine is ready when toy can access the HAProxy web
+interface
+
+Username: test
+Password: test
+
+- http://192.168.100.2:8404/stats
+
+You can access the Loadbalancer server via vagrant:
+
+    vagrant ssh lb
+
+
 <!--
 - https://traefik.192.168.100.2.xip.io:8443/dashboard/
 
@@ -130,13 +144,8 @@ Username:password is test:test or test1:test1
 -->
 
 
-When the server is finidhed you should be able to get to the HAProxy stats page.
 
-Username: test
-Password: test
-
-- http://192.168.100.2:8404/stats
-
+## Building the Bootstrap server
 
 Start a web server locally with `./webroot` as the root directory. The simplest
 way is to use the webserver built into python. This web server serves the ipxe
@@ -149,12 +158,11 @@ firewalls. On fedora use **firewall-cmd**
 
     sudo firewall-cmd --zone=libvirt --add-port=8000/tcp
 
-
 Start the bootstrap server. This should ipxe boot over http.
 
     vagrant up bootstrap
 
-After a short while you should see the following in the weblogs
+After a short while you should see the following in the weblogs.
 
     Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
     192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /bootstrap.ipxe HTTP/1.1" 200 -
@@ -165,20 +173,16 @@ After a short while you should see the following in the weblogs
     192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /os_ignition/bootstrap.ign HTTP/1.1" 200 -
     192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
 
-You can follow along using virt-manager and by following the lb server logs.
 
-    vagrant ssh lb
-    sudo su -
-    journalctl -f
-
-You can examine if the required services are available by looking at the load
+The Bootstrap server is ready when it becomes available in the Loadbalancer. You
+can examine if the required services are available by looking at the load
 balancer stats page. Make sure that the `bootstrap` server is available in both
 the `kubernetes_api` and `machine_config` backends. They should go green.
 
 
 
 When it has finished installing you can ssh to the machine using the ssh key
-created earlier
+created earlier.
 
     ssh -i ssh_key/id_ed25519 core@192.168.100.5
 
@@ -186,7 +190,10 @@ created earlier
     journalctl -b -f -u bootkube.service
 
 
-Start the rest of the machines
+## Control Plan systems and Workers
+Start the rest of the machines. This requires 3 control plane (*cp*) systems and at
+least 2 *worker* systems. The following commands will start these up three of
+each.
 
 
     vagrant up /cp[0-9]/
@@ -196,8 +203,11 @@ Start the rest of the machines
 
 
 
-Wait a while and run the following command. It will exit when the cluster is
-ready to have the bootstrap server removed.
+You need to remove the *bootstrap* server when it has finished doing the initial
+setup of the *cp* systems. The following command will monitor the
+bootstrap progress and report when it is complete.
+
+
 
     $ openshift-install --dir=webroot/os_ignition wait-for bootstrap-complete --log-level=debug
     DEBUG OpenShift Installer 4.4.6
@@ -209,7 +219,7 @@ ready to have the bootstrap server removed.
     INFO It is now safe to remove the bootstrap resources
 
 
-You can also follow along the logs on the bootstrap server. After what feels
+You can also follow along the logs on the *bootstrap* system. After what feels
 like a year the logs on bootstrap will have something like this appear.
 
     [core@bootstrap ~]$ journalctl -b -f -u bootkube.service
@@ -220,29 +230,32 @@ like a year the logs on bootstrap will have something like this appear.
     Jun 22 21:22:36 bootstrap bootkube.sh[7751]: bootkube.service complete
 
 
-Destroy the bootstrap server
+Destroy the *bootstrap* system
 
     vagrant destroy bootstrap
 
 Looking in the HAProxy page http://192.168.100.2:8404/stats you will see that
-the masters have all gone green.
+the *cp* systems have all gone green and the bootstrap service is now red
 
 ## Access the cluster with `co`
 
     export KUBECONFIG=${PWD}/webroot/os_ignition/auth/kubeconfig
 
 
-    $ oc get nodes
+    $ watch -n5 oc get nodes
     NAME   STATUS   ROLES    AGE   VERSION
     cp0    Ready    master   26m   v1.17.1
     cp1    Ready    master   25m   v1.17.1
     cp2    Ready    master   25m   v1.17.1
 
 
-I dont think the workers join unless you have signed their certificates. The
-following lists trhe certificates.
+For a new worker to join the cluster it will need it's certificate approved.
+This can be automated in a cloud provider but for a baremetal cluster you need
+to do it by ahand or automate itr in some way. Keep an eye on this while the
+workers are building as they have 2 sets of certificates which need signing.
 
-    $ oc get csr
+
+    $ watch -n5 oc get csr
     NAME        AGE   REQUESTOR                                                                   CONDITION
     csr-2vn2n   34m   system:node:cp2                                                             Approved,Issued
     csr-57kvs   35m   system:node:cp0                                                             Approved,Issued
@@ -264,16 +277,58 @@ Watch the cluster operators start up.
     watch -n5 oc get clusteroperators
 
 
+Eventually you should get everything go to True in the AVAILABLE column.
 
+    NAME                                       VERSION   AVAILABLE   PROGRESSING   DEGRADED   SINCE
+    authentication                             4.4.6     True        False         False      30m
+    cloud-credential                           4.4.6     True        False         False      80m
+    cluster-autoscaler                         4.4.6     True        False         False      46m
+    console                                    4.4.6     True        False         False      30m
+    csi-snapshot-controller                    4.4.6     True        False         False      38m
+    dns                                        4.4.6     True        False         False      65m
+    etcd                                       4.4.6     True        False         False      65m
+    image-registry                             4.4.6     True        False         False      57m
+    ingress                                    4.4.6     True        False         False      40m
+    insights                                   4.4.6     True        False         False      57m
+    kube-apiserver                             4.4.6     True        False         False      64m
+    kube-controller-manager                    4.4.6     True        False         False      64m
+    kube-scheduler                             4.4.6     True        False         False      64m
+    kube-storage-version-migrator              4.4.6     True        False         False      39m
+    machine-api                                4.4.6     True        False         False      66m
+    machine-config                             4.4.6     True        False         False      34m
+    marketplace                                4.4.6     True        False         False      57m
+    monitoring                                 4.4.6     True        False         False      29m
+    network                                    4.4.6     True        False         False      67m
+    node-tuning                                4.4.6     True        False         False      68m
+    openshift-apiserver                        4.4.6     True        False         False      40m
+    openshift-controller-manager               4.4.6     True        False         False      47m
+    openshift-samples                          4.4.6     True        False         False      22m
+    operator-lifecycle-manager                 4.4.6     True        False         False      66m
+    operator-lifecycle-manager-catalog         4.4.6     True        False         False      66m
+    operator-lifecycle-manager-packageserver   4.4.6     True        False         False      51m
+    service-ca                                 4.4.6     True        False         False      68m
+    service-catalog-apiserver                  4.4.6     True        False         False      68m
+    service-catalog-controller-manager         4.4.6     True        False         False      68m
+    storage                                    4.4.6     True        False         False      57m
+
+
+## Access the web interface
+
+
+
+
+- https://console-openshift-console.apps.kube1.vm.test
+
+To login for the first time you should use the user `kubeadmin` and the password
+that was generated when you set up the cluster config files.
+
+    cat webroot/os_ignition/auth/kubeadmin-password
 
 
 
 
 ## Notes
 
-Seem to need to run the following on the machines to get them to work
-
-    sudo systemctl restart systemd-udev-settle.service
 
 
 htaccesss provider
@@ -302,12 +357,3 @@ htaccesss provider
     oc login -u test  -p test --certificate-authority=ingress-ca.crt
 
 
-
-consoleBaseAddress: https://console-openshift-console.apps.kube1.vm.test
-alertmanagerPublicURL: https://alertmanager-main-openshift-monitoring.apps.kube1.vm.test
-grafanaPublicURL: https://grafana-openshift-monitoring.apps.kube1.vm.test
-prometheusPublicURL: https://prometheus-k8s-openshift-monitoring.apps.kube1.vm.test
-thanosPublicURL: https://thanos-querier-openshift-monitoring.apps.kube1.vm.test
-
-
-https://servicesblog.redhat.com/2019/07/11/installing-openshift-4-1-using-libvirt-and-kvm/
