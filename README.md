@@ -346,12 +346,13 @@ You can sign them one at a time but this does it all at once.
     oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
 
 
+
+
 Watch the cluster operators start up.
 
     watch -n5 oc get clusteroperators
 
-
-Eventually you should get everything go to *True* in the **AVAILABLE** column.
+Eventually, everything go to *True* in the **AVAILABLE** column.
 
     NAME                                       VERSION   AVAILABLE   PROGRESSING   DEGRADED   SINCE
     authentication                             4.4.6     True        False         False      30m
@@ -386,15 +387,30 @@ Eventually you should get everything go to *True* in the **AVAILABLE** column.
     storage                                    4.4.6     True        False         False      57m
 
 
+
+Use the following command to check when the install is completed.
+
+    openshift-install --dir=webroot/os_ignition wait-for install-complete
+
+The output will hang and wait for the installation to complete. Eventually you
+should end up with output similar to the following:
+
+    INFO Waiting up to 30m0s for the cluster at https://api.kube1.vm.test:6443 to initialize...
+    INFO Waiting up to 10m0s for the openshift-console route to be created...
+    INFO Install complete!
+    INFO To access the cluster as the system:admin user when using 'oc', run 'export KUBECONFIG=/home/timhughes/git/vagrant_openshift/webroot/os_ignition/auth/kubeconfig'
+    INFO Access the OpenShift web-console here: https://console-openshift-console.apps.kube1.vm.test
+    INFO Login to the console with user: kubeadmin, password: xxxxx-xxxxx-xxxxx-xxxxx
+
+
 ## Access the web interface
-
-
 
 
 - https://console-openshift-console.apps.kube1.vm.test
 
 To login for the first time you should use the user `kubeadmin` and the password
-that was generated when you set up the cluster config files.
+shown in the last section. If you have missed that then it is available in the
+configs you set up at the beginning.
 
     cat webroot/os_ignition/auth/kubeadmin-password
 
