@@ -2,7 +2,6 @@
 
 These instructions are based on https://docs.openshift.com/container-platform/4.4/installing/installing_bare_metal/installing-bare-metal.html
 
-http://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.4/latest/
 
 Make some directories to use.
 
@@ -117,22 +116,26 @@ Download the install images into `webroot/images/`
     )
 
 
+## The loadbalancer system.
 
-Start the first vagrant server that will become the Loadbalancer and DHCP/DNS
-server. That should build and get provisioned by ansible:
+
+
+Start the first vagrant system that will provide the Loadbalancer and DHCP/DNS
+services. In a production environment this would be a part of your infrastructure.
+The following vagrant command should build the *lb* system and provision it using ansible:
 
     vagrant up lb
 
 
-The loadoadbalancer machine is ready when toy can access the HAProxy web
-interface
+The *lb* system is ready when you can access the HAProxy web
+interface.
 
 Username: test
 Password: test
 
 - http://192.168.100.2:8404/stats
 
-You can access the Loadbalancer server via vagrant:
+You can access the *lb* system via vagrant:
 
     vagrant ssh lb
 
@@ -145,7 +148,7 @@ Username:password is test:test or test1:test1
 
 
 
-## Building the Bootstrap server
+## Building the Bootstrap system
 
 Start a web server locally with `./webroot` as the root directory. The simplest
 way is to use the webserver built into python. This web server serves the ipxe
@@ -158,7 +161,7 @@ firewalls. On fedora use **firewall-cmd**
 
     sudo firewall-cmd --zone=libvirt --add-port=8000/tcp
 
-Start the bootstrap server. This should ipxe boot over http.
+Start the *bootstrap* system. This should ipxe boot over http.
 
     vagrant up bootstrap
 
@@ -174,14 +177,14 @@ After a short while you should see the following in the weblogs.
     192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
 
 
-The Bootstrap server is ready when it becomes available in the Loadbalancer. You
+The *bootstrap* system is ready when it becomes available in the Loadbalancer. You
 can examine if the required services are available by looking at the load
-balancer stats page. Make sure that the `bootstrap` server is available in both
+balancer stats page. Make sure that the *bootstrap* system is available in both
 the `kubernetes_api` and `machine_config` backends. They should go green.
 
 
 
-When it has finished installing you can ssh to the machine using the ssh key
+When it has finished installing you can ssh to the system using the ssh key
 created earlier.
 
     ssh -i ssh_key/id_ed25519 core@192.168.100.5
@@ -190,8 +193,8 @@ created earlier.
     journalctl -b -f -u bootkube.service
 
 
-## Control Plan systems and Workers
-Start the rest of the machines. This requires 3 control plane (*cp*) systems and at
+## Control Plane systems and Worker systems
+Start the rest of the systems. This requires 3 control plane (*cp*) systems and at
 least 2 *worker* systems. The following commands will start these up three of
 each.
 
@@ -203,7 +206,7 @@ each.
 
 
 
-You need to remove the *bootstrap* server when it has finished doing the initial
+You need to remove the *bootstrap* system when it has finished doing the initial
 setup of the *cp* systems. The following command will monitor the
 bootstrap progress and report when it is complete.
 
@@ -220,7 +223,7 @@ bootstrap progress and report when it is complete.
 
 
 You can also follow along the logs on the *bootstrap* system. After what feels
-like a year the logs on bootstrap will have something like this appear.
+like a year the logs on *bootstrap* will have something like this appear.
 
     [core@bootstrap ~]$ journalctl -b -f -u bootkube.service
 
@@ -235,7 +238,7 @@ Destroy the *bootstrap* system
     vagrant destroy bootstrap
 
 Looking in the HAProxy page http://192.168.100.2:8404/stats you will see that
-the *cp* systems have all gone green and the bootstrap service is now red
+the *cp* systems have all gone green and the *bootstrap* system is now red
 
 ## Access the cluster with `co`
 
@@ -249,10 +252,11 @@ the *cp* systems have all gone green and the bootstrap service is now red
     cp2    Ready    master   25m   v1.17.1
 
 
-For a new worker to join the cluster it will need it's certificate approved.
-This can be automated in a cloud provider but for a baremetal cluster you need
-to do it by ahand or automate itr in some way. Keep an eye on this while the
-workers are building as they have 2 sets of certificates which need signing.
+For a new *worker* system to join the cluster it will need it's certificate
+approved.  This can be automated in a cloud provider but for a baremetal cluster
+you need to do it by ahand or automate itr in some way. Keep an eye on this
+while the workers are building as they have 2 sets of certificates which need
+signing.
 
 
     $ watch -n5 oc get csr
@@ -277,7 +281,7 @@ Watch the cluster operators start up.
     watch -n5 oc get clusteroperators
 
 
-Eventually you should get everything go to True in the AVAILABLE column.
+Eventually you should get everything go to *True* in the **AVAILABLE** column.
 
     NAME                                       VERSION   AVAILABLE   PROGRESSING   DEGRADED   SINCE
     authentication                             4.4.6     True        False         False      30m
