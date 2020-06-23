@@ -2,6 +2,72 @@
 
 These instructions are based on https://docs.openshift.com/container-platform/4.4/installing/installing_bare_metal/installing-bare-metal.html
 
+I have built this as a learning experience and potential use as a playground
+environment for Systems Engineers who manage OpenShift clusters. At the end you
+should end up with a OpenShift cluster with:
+
+- One load-balancer/dhcp/dns system
+- Three control-plane systems
+- Three worker systems.
+
+
+## Security
+
+Don't expect this to be secure in any way. There are several thing in here that
+I know to be insecure but this is for setting up a test environment. You have
+been warned.
+
+## Prerequisites
+
+This walk-through makes a few assumptions. First of all you are going to need to
+have at least a trial version of Openshift to be able to access everything.
+Either contact you Red Hat representative and ask for a trial or you can sign up
+for a Red Hat Developer account at https://developers.redhat.com/
+
+The rest of the requirements are based on my working environment.
+
+- Vagrant
+- vagrant-libvirt
+- Ansible
+
+
+At the time of writing I was using Fedora 32 but this should work with minimal
+modifications on other Linux distributions. You will also need a lot of RAM as
+you are going to start up 8 virtual machines so the more RAM the better. If you
+less than 64GB then you may want to edit the amount allocated to each machine
+type in the `Vagrantfile`
+
+You will also need some way of accessing the dns inside the cluster. This can
+easily be done with NetworkManager and dnsmasq, an example of this is below.
+
+    $ cat /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
+    # /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
+    #
+    # This enabled the dnsmasq plugin.
+    [main]
+    dns=dnsmasq
+
+    $ cat  /etc/NetworkManager/dnsmasq.d/00-config.conf
+    server=192.168.1.1
+    addn-hosts=/etc/hosts
+
+    $  cat /etc/NetworkManager/dnsmasq.d/00-openshift.conf
+    server=/kube1.vm.test/192.168.100.2
+
+Remember to restart NetworkManager to pick up the changes.
+
+    systemctl restart NetworkManager.service
+
+The working directory for for all the commands is assumed to be the root
+directory of the cloned git repository.
+
+
+
+
+## Getting the cli tools and preparing
+
+
+
 
 Make some directories to use.
 
@@ -43,14 +109,17 @@ Create an installation directory
 
     mkdir -p webroot/os_ignition
 
-If yuo have used ithe directory before then you need to remove the old files.
+If you have used the directory before then you need to remove the old files.
 
     rm -rf webroot/os_ignition/*
     rm -rf webroot/os_ignition/.openshift*
 
-Create an `install-config.yaml` inside the installatin directory and customize
+
+## Creating the boot configs
+
+Create an `install-config.yaml` inside the installation directory and customize
 it as per the documentation on https://docs.openshift.com/container-platform/4.4/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
-Note that you need to put your pull secret in there.
+Note that you need to put your pull secret in there:
 
     cat <<-EOF > webroot/os_ignition/install-config.yaml
     apiVersion: v1
@@ -79,7 +148,8 @@ Note that you need to put your pull secret in there.
     sshKey: '$(cat ssh_key/id_ed25519.pub)'
     EOF
 
-I think you can add a corporate CA certificate in the insta;l;-config.yaml
+You can add a corporate CA certificate and proxy servers in the
+`install-config.yaml` if required:
 
     apiVersion: v1
     baseDomain: my.domain.com
@@ -92,7 +162,7 @@ I think you can add a corporate CA certificate in the insta;l;-config.yaml
         <MY_TRUSTED_CA_CERT>
         -----END CERTIFICATE-----
 
-Creating the Kubernetes manifest and Ignition config files
+Creating the Kubernetes manifest and Ignition config files:
 
     openshift-install create manifests --dir=webroot/os_ignition
 
@@ -102,10 +172,10 @@ Creating the Kubernetes manifest and Ignition config files
 
 
 XXXX TODO: besides the ignition files this also create the kubernetes
-authentication files and thesy shouldnt be uploaded to a web servers.
+authentication files and they shouldn't be uploaded to a web servers.
 
 
-Download the install images into `webroot/images/`
+Download the install images into `webroot/images/`:
 
 
     (
@@ -116,13 +186,13 @@ Download the install images into `webroot/images/`
     )
 
 
-## The loadbalancer system.
+## The load-balancer system.
 
 
 
-Start the first vagrant system that will provide the Loadbalancer and DHCP/DNS
+Start the first vagrant system that will provide the load-balancer and DHCP/DNS
 services. In a production environment this would be a part of your infrastructure.
-The following vagrant command should build the *lb* system and provision it using ansible:
+The following vagrant command should build the *lb* system and provision it using Ansible:
 
     vagrant up lb
 
@@ -177,10 +247,10 @@ After a short while you should see the following in the weblogs.
     192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
 
 
-The *bootstrap* system is ready when it becomes available in the Loadbalancer. You
-can examine if the required services are available by looking at the load
-balancer stats page. Make sure that the *bootstrap* system is available in both
-the `kubernetes_api` and `machine_config` backends. They should go green.
+The *bootstrap* system is ready when it becomes available in the load-balancer
+You can examine if the required services are available by looking at the
+load-balancer stats page. Make sure that the *bootstrap* system is available in
+both the `kubernetes_api` and `machine_config` backends. They should go green.
 
 
 
@@ -253,10 +323,10 @@ the *cp* systems have all gone green and the *bootstrap* system is now red
 
 
 For a new *worker* system to join the cluster it will need it's certificate
-approved.  This can be automated in a cloud provider but for a baremetal cluster
-you need to do it by ahand or automate itr in some way. Keep an eye on this
-while the workers are building as they have 2 sets of certificates which need
-signing.
+approved.  This can be automated in a cloud provider but for a bare-metal
+cluster you need to do it by hand or automate it in some way. Keep an eye on
+this while the workers are building as they have 2 sets of certificates which
+need signing.
 
 
     $ watch -n5 oc get csr
