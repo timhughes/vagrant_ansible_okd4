@@ -419,33 +419,5 @@ configs you set up at the beginning.
 
 
 
-## Notes
-
-
-
-htaccesss provider
-
-    htpasswd -c -B -b users.htpasswd test test
-    oc create secret generic htpass-secret --from-file=htpasswd=users.htpasswd     -n openshift-config
-
-    cat >  htaccess.yaml
-    apiVersion: config.openshift.io/v1
-    kind: OAuth
-    metadata:
-    name: cluster
-    spec:
-    identityProviders:
-    - name: my_htpasswd_provider
-        mappingMethod: claim
-        type: HTPasswd
-        htpasswd:
-        fileData:
-            name: htpass-secret
-
-
-    oc apply -f htaccess.yaml
-
-    oc rsh -n openshift-authentication oauth-openshift-667b4c7565-7spwz cat /run/secrets/kubernetes.io/serviceaccount/ca.crt > ingress-ca.crt
-    oc login -u test  -p test --certificate-authority=ingress-ca.crt
 
 
