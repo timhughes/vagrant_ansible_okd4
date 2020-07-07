@@ -222,9 +222,11 @@ Username:password is test:test or test1:test1
 
 Start a web server locally with `./webroot` as the root directory. The simplest
 way is to use the webserver built into python. This web server serves the ipxe
-configs and all the installation files.
+configs and all the installation files. 🔥 the `./webroot/os_ignition/auth`
+directory contains files that dont need to be and should never be accessable, I
+have just been lazy here since it is a network local to wy workstation.
 
-    python -m http.server --directory ./webroot 8000
+    python -m http.server --bind 192.168.100.1 --directory ./webroot 8000
 
 Make sure that the virtual machines can access the web server through any
 firewalls. On fedora use **firewall-cmd**
