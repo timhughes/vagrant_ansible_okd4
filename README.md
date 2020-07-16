@@ -174,15 +174,23 @@ Creating the Kubernetes manifest and Ignition config files:
 Besides the ignition files this also create the kubernetes
 authentication files and they shouldn't be uploaded to a web servers.
 
-    mv webroot/os_ignition/auth ./
+    #TODO copy the ignition files to a web server with out the auth files
 
-Download the install images into `webroot/images/`:
+Download the install images and sig files into `webroot/images/`. You can do this by hand or
+use the following command to grab the latest automatically:
 
     curl -s "https://builds.coreos.fedoraproject.org/streams/stable.json"|jq '.architectures.x86_64.artifacts.metal.formats| .pxe,."raw.xz"|.[].location' | xargs wget -c -LP webroot/images/
+    curl -s "https://builds.coreos.fedoraproject.org/streams/stable.json"|jq '.architectures.x86_64.artifacts.metal.formats| .pxe,."raw.xz"|.[].location,.[].signature'| xargs wget -c -LP webroot/images/
+
+
+Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded you downloaded.
+
+    set okd-kernel fedora-coreos-32.20200629.3.0-live-kernel-x86_64
+    set okd-initrd fedora-coreos-32.20200629.3.0-live-initramfs.x86_64.img
+    set okd-image fedora-coreos-32.20200629.3.0-metal.x86_64.raw.xz
 
 
 ## The load-balancer system.
-
 
 
 Start the first vagrant system that will provide the load-balancer and DHCP/DNS
@@ -234,21 +242,20 @@ Start the *bootstrap* system. This should ipxe boot over http.
 
 After a short while you should see the following in the weblogs.
 
-    Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
-    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /bootstrap.ipxe HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /boot.ipxe.cfg HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /images/rhcos-4.4.3-x86_64-installer-kernel-x86_64 HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:38:48] "GET /images/rhcos-4.4.3-x86_64-installer-initramfs.x86_64.img HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:39:03] "HEAD /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /os_ignition/bootstrap.ign HTTP/1.1" 200 -
-    192.168.100.5 - - [22/Jun/2020 20:39:03] "GET /images/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz HTTP/1.1" 200 -
+    Serving HTTP on 192.168.100.1 port 8000 (http://192.168.100.1:8000/) ...
+    192.168.100.5 - - [16/Jul/2020 17:33:05] "GET /bootstrap.ipxe HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:05] "GET /boot.ipxe.cfg HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:05] "GET /images/fedora-coreos-32.20200629.3.0-live-kernel-x86_64 HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:05] "GET /images/fedora-coreos-32.20200629.3.0-live-initramfs.x86_64.img HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:24] "GET /os_ignition/bootstrap.ign HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:25] "GET /images/fedora-coreos-32.20200629.3.0-metal.x86_64.raw.xz.sig HTTP/1.1" 200 -
+    192.168.100.5 - - [16/Jul/2020 17:33:25] "GET /images/fedora-coreos-32.20200629.3.0-metal.x86_64.raw.xz HTTP/1.1" 200 -
 
 
 The *bootstrap* system is ready when it becomes available in the load-balancer
 You can examine if the required services are available by looking at the
 load-balancer stats page. Make sure that the *bootstrap* system is available in
 both the `kubernetes_api` and `machine_config` backends. They should go green.
-
 
 
 When it has finished installing you can ssh to the system using the ssh key
@@ -279,7 +286,7 @@ bootstrap progress and report when it is complete.
 
 
 
-    $ openshift-install --dir=webroot/os_ignition wait-for bootstrap-complete --log-level=debug
+    $ openshift-install --dir=. wait-for bootstrap-complete --log-level=debug
     DEBUG OpenShift Installer 4.4.6
     DEBUG Built from commit 99e1dc030910ccd241e5d2563f27725c0d3117b0
     INFO Waiting up to 20m0s for the Kubernetes API at https://api.kube1.vm.test:6443...
@@ -309,7 +316,7 @@ the *cp* systems have all gone green and the *bootstrap* system is now red
 
 ## Access the cluster with `co`
 
-    export KUBECONFIG=${PWD}/webroot/os_ignition/auth/kubeconfig
+    export KUBECONFIG=webroot/os_ignition/auth/kubeconfig
 
 
     $ watch -n5 oc get nodes
@@ -326,22 +333,50 @@ this while the workers are building as they have 2 sets of certificates which
 need signing.
 
 
-    $ watch -n5 oc get csr
-    NAME        AGE   REQUESTOR                                                                   CONDITION
-    csr-2vn2n   34m   system:node:cp2                                                             Approved,Issued
-    csr-57kvs   35m   system:node:cp0                                                             Approved,Issued
-    csr-8mhbr   34m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
-    csr-9wlf9   11m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
-    csr-dbrb2   10m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
-    csr-fh87f   10m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
-    csr-h5g2s   35m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
-    csr-kxxxg   34m   system:node:cp1                                                             Approved,Issued
-    csr-tsw2q   34m   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    $ oc get csr
+    NAME        AGE   SIGNERNAME                                    REQUESTOR                                                                   CONDITION
+    csr-6jxjn   36m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-8fztn   10m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
+    csr-8hmrl   10m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
+    csr-8xzzz   36m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-cktk4   36m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-kktkw   36m   kubernetes.io/kubelet-serving                 system:node:cp2                                                             Approved,Issued
+    csr-lkxhx   10m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Pending
+    csr-qlhmk   35m   kubernetes.io/kubelet-serving                 system:node:cp0                                                             Approved,Issued
+    csr-wgjdd   36m   kubernetes.io/kubelet-serving                 system:node:cp1                                                             Approved,Issued
 
 You can sign them one at a time but this does it all at once.
 
-    oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+    $ oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+    certificatesigningrequest.certificates.k8s.io/csr-8fztn approved
+    certificatesigningrequest.certificates.k8s.io/csr-8hmrl approved
+    certificatesigningrequest.certificates.k8s.io/csr-lkxhx approved
 
+
+This will allow the nodes to registyer and they will almost immediatly request a
+certificate of their own which will need signing.
+
+    $ oc get csr
+    NAME        AGE   SIGNERNAME                                    REQUESTOR                                                                   CONDITION
+    csr-6jxjn   37m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-8fztn   11m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-8hmrl   11m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-8xzzz   37m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-cktk4   37m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-fb9qk   34s   kubernetes.io/kubelet-serving                 system:node:worker-192-168-100-228.kube1.vm.test                            Pending
+    csr-hjqv6   33s   kubernetes.io/kubelet-serving                 system:node:worker-192-168-100-230.kube1.vm.test                            Pending
+    csr-j42cq   34s   kubernetes.io/kubelet-serving                 system:node:worker-192-168-100-238.kube1.vm.test                            Pending
+    csr-kktkw   37m   kubernetes.io/kubelet-serving                 system:node:cp2                                                             Approved,Issued
+    csr-lkxhx   11m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper   Approved,Issued
+    csr-qlhmk   36m   kubernetes.io/kubelet-serving                 system:node:cp0                                                             Approved,Issued
+    csr-wgjdd   37m   kubernetes.io/kubelet-serving                 system:node:cp1                                                             Approved,Issued
+
+Because there are still come pending you will need to sign them as well.
+
+    $ oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+    certificatesigningrequest.certificates.k8s.io/csr-fb9qk approved
+    certificatesigningrequest.certificates.k8s.io/csr-hjqv6 approved
+    certificatesigningrequest.certificates.k8s.io/csr-j42cq approved
 
 
 
