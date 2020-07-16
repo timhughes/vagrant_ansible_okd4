@@ -1,5 +1,11 @@
 # Vagrant > Ansible > OKD4
 
+OKD4 is the upstream community version of Red Hat's OpenShift Container
+Platform. This system which is based on Kubernetes and containers enables you to
+run you own Platform-as-a-Service on your own hardware or deploy it into a cloud
+platform such as Google Cloud or AWS.
+
+
 These instructions are based on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-requirements-user-infra_installing-bare-metal
 
 I have built this as a learning experience and potential use as a playground
@@ -48,7 +54,7 @@ easily be done with NetworkManager and dnsmasq, an example of this is below.
     server=192.168.1.1
     addn-hosts=/etc/hosts
 
-    $  cat /etc/NetworkManager/dnsmasq.d/00-openshift.conf
+    $  cat /etc/NetworkManager/dnsmasq.d/00-okd.conf
     server=/kube1.vm.test/192.168.100.2
 
 Remember to restart NetworkManager to pick up the changes.
@@ -88,7 +94,7 @@ need to run this again.
 
 Download the installation file on a local computer.
 
-- https://cloud.redhat.com/openshift/install/metal/user-provisioned
+- https://github.com/openshift/okd/releases
 
 
     wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-install-linux-${OKD_RELEASE}.tar.gz
@@ -99,8 +105,8 @@ Extract the installation program and put it somewhere on your PATH.
     tar xvf tmp/openshift-install-linux-${OKD_RELEASE}.tar.gz --directory tmp/
     mv tmp/openshift-install bin/
 
-Download and extract the command line tool `oc` in the same place as you put
-the installer.
+Download and extract the command line tool `oc` from the same locattion as the
+installer and pit it in the same place as you put the installer.
 
     wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-client-linux-${OKD_RELEASE}.tar.gz
     tar xvf tmp/openshift-client-linux-${OKD_RELEASE}.tar.gz --directory tmp/
