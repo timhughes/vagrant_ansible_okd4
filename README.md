@@ -118,7 +118,7 @@ If you have used the directory before then you need to remove the old files.
 
 Create an `install-config.yaml` inside the installation directory and customize
 it as per the documentation on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
-Note that you do not need a value for `pullSecret` because that is for the Red
+Note that you do not need valid value for `pullSecret` because that is for the Red
 Hat supported OCP:
 
     cat <<-EOF > webroot/os_ignition/install-config.yaml
@@ -144,7 +144,7 @@ Hat supported OCP:
     platform:
       none: {}
     fips: false
-    pullSecret: ''
+    pullSecret: '{"auths":{"xxxxxxx": {"auth": "xxxxxx","email": "xxxxxx"}}}'
     sshKey: '$(cat ssh_key/id_ed25519.pub)'
     EOF
 
@@ -171,19 +171,14 @@ Creating the Kubernetes manifest and Ignition config files:
     openshift-install create ignition-configs --dir=webroot/os_ignition
 
 
-XXXX TODO: besides the ignition files this also create the kubernetes
+Besides the ignition files this also create the kubernetes
 authentication files and they shouldn't be uploaded to a web servers.
 
+    mv webroot/os_ignition/auth ./
 
 Download the install images into `webroot/images/`:
 
-
-    (
-    cd webroot/images/
-    curl -LO https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/latest/latest/rhcos-4.4.3-x86_64-installer-kernel-x86_64
-    curl -LO https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/latest/latest/rhcos-4.4.3-x86_64-installer-initramfs.x86_64.img
-    curl -LO https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/latest/latest/rhcos-4.4.3-x86_64-metal.x86_64.raw.gz
-    )
+    curl -s "https://builds.coreos.fedoraproject.org/streams/stable.json"|jq '.architectures.x86_64.artifacts.metal.formats| .pxe,."raw.xz"|.[].location' | xargs wget -c -LP webroot/images/
 
 
 ## The load-balancer system.

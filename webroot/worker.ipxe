@@ -4,10 +4,10 @@ chain --autofree boot.ipxe.cfg ||
 
 
 :coreos-stable
-echo Booting RHCOS Worker
-kernel ${rhcos-kernel-url}
-initrd ${rhcos-initrd-url}
-imgargs ${rhcos-kernel} ip=dhcp rd.neednet=1 initrd=${rhcos-initrd-url}  console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=${rhcos-image-url} coreos.inst.ignition_url=${base-url}/${ignition-path}/worker.ign
+echo Booting OKD Worker
+kernel ${okd-kernel-url}
+initrd ${okd-initrd-url}
+imgargs ${okd-kernel} ip=dhcp rd.neednet=1 initrd=${okd-initrd-url}  console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=${okd-image-url} coreos.inst.ignition_url=${base-url}/${ignition-path}/worker.ign
 boot
 
 
