@@ -19,23 +19,20 @@ been warned.
 
 ## Prerequisites
 
-This walk-through makes a few assumptions. First of all you are going to need to
-have at least a trial version of Openshift to be able to access everything.
-Either contact you Red Hat representative and ask for a trial or you can sign up
-for a Red Hat Developer account at https://developers.redhat.com/
+This walkthrough is based on my working environment.
 
-The rest of the requirements are based on my working environment.
-
+- Fedora
 - Vagrant
 - vagrant-libvirt
 - Ansible
 
 
-At the time of writing I was using Fedora 32 but this should work with minimal
-modifications on other Linux distributions. You will also need a lot of RAM as
-you are going to start up 8 virtual machines so the more RAM the better. If you
-less than 64GB then you may want to edit the amount allocated to each machine
-type in the `Vagrantfile`
+There is no real dependency on Fedora as long as you have fairly recent versions
+of the other items. At the time of writing I was using Fedora 32 but this should
+work with minimal modifications on other Linux distributions. You will also need
+a lot of RAM as you are going to start up 8 virtual machines so the more RAM the
+better. If you less than 64GB then you may want to edit the amount allocated to
+each machine type in the `Vagrantfile`
 
 You will also need some way of accessing the dns inside the cluster. This can
 easily be done with NetworkManager and dnsmasq, an example of this is below.
@@ -58,13 +55,19 @@ Remember to restart NetworkManager to pick up the changes.
 
     systemctl restart NetworkManager.service
 
+
+# Get the code.
+
+Step one is to clone the code which is available on Github.
+
+    git clone https://github.com/timhughes/vagrant_ansible_okd4
+    cd vagrant_ansible_okd4
+
 The working directory for for all the commands is assumed to be the root
 directory of the cloned git repository.
 
 
-
-
-## Getting the cli tools and preparing
+## Getting the cli tools and preparing.
 
 
 Make some directories to use.
@@ -114,12 +117,13 @@ If you have used the directory before then you need to remove the old files.
     rm -rf webroot/os_ignition/.openshift*
 
 
-## Creating the boot configs
+## Creating the boot configs.
 
 Create an `install-config.yaml` inside the installation directory and customize
-it as per the documentation on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
-Note that you do not need valid value for `pullSecret` because that is for the Red
-Hat supported OCP:
+it as per the documentation on
+https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
+Note that you do not need valid value for `pullSecret` because that is for the
+Red Hat supported OCP:
 
     cat <<-EOF > webroot/os_ignition/install-config.yaml
     apiVersion: v1
@@ -176,14 +180,15 @@ authentication files and they shouldn't be uploaded to a web servers.
 
     #TODO copy the ignition files to a web server with out the auth files
 
-Download the install images and sig files into `webroot/images/`. You can do this by hand or
-use the following command to grab the latest automatically:
+Download the install images and sig files into `webroot/images/`. You can do
+this by hand or use the following command to grab the latest automatically:
 
     curl -s "https://builds.coreos.fedoraproject.org/streams/stable.json"|jq '.architectures.x86_64.artifacts.metal.formats| .pxe,."raw.xz"|.[].location' | xargs wget -c -LP webroot/images/
     curl -s "https://builds.coreos.fedoraproject.org/streams/stable.json"|jq '.architectures.x86_64.artifacts.metal.formats| .pxe,."raw.xz"|.[].location,.[].signature'| xargs wget -c -LP webroot/images/
 
 
-Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded you downloaded.
+Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded
+you downloaded.
 
     set okd-kernel fedora-coreos-32.20200629.3.0-live-kernel-x86_64
     set okd-initrd fedora-coreos-32.20200629.3.0-live-initramfs.x86_64.img
@@ -194,8 +199,9 @@ Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded
 
 
 Start the first vagrant system that will provide the load-balancer and DHCP/DNS
-services. In a production environment this would be a part of your infrastructure.
-The following vagrant command should build the *lb* system and provision it using Ansible:
+services. In a production environment this would be a part of your
+infrastructure.  The following vagrant command should build the *lb* system and
+provision it using Ansible:
 
     vagrant up lb
 
@@ -430,12 +436,12 @@ should end up with output similar to the following:
     INFO Waiting up to 30m0s for the cluster at https://api.kube1.vm.test:6443 to initialize...
     INFO Waiting up to 10m0s for the openshift-console route to be created...
     INFO Install complete!
-    INFO To access the cluster as the system:admin user when using 'oc', run 'export KUBECONFIG=/home/timhughes/git/vagrant_openshift/webroot/os_ignition/auth/kubeconfig'
+    INFO To access the cluster as the system:admin user when using 'oc', run 'export KUBECONFIG=/home/timhughes/git/vagrant_ansible_okd4/webroot/os_ignition/auth/kubeconfig'
     INFO Access the OpenShift web-console here: https://console-openshift-console.apps.kube1.vm.test
     INFO Login to the console with user: kubeadmin, password: xxxxx-xxxxx-xxxxx-xxxxx
 
 
-## Access the web interface
+## Access the web interface.
 
 
 - https://console-openshift-console.apps.kube1.vm.test
@@ -445,7 +451,6 @@ shown in the last section. If you have missed that then it is available in the
 configs you set up at the beginning.
 
     cat webroot/os_ignition/auth/kubeadmin-password
-
 
 
 
