@@ -1,10 +1,10 @@
-# Vagrant > Ansible > Openshift
+# Vagrant > Ansible > OKD4
 
-These instructions are based on https://docs.openshift.com/container-platform/4.4/installing/installing_bare_metal/installing-bare-metal.html
+These instructions are based on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-requirements-user-infra_installing-bare-metal
 
 I have built this as a learning experience and potential use as a playground
-environment for Systems Engineers who manage OpenShift clusters. At the end you
-should end up with a OpenShift cluster with:
+environment for Systems Engineers who manage OKD4 clusters. At the end you
+should end up with a OKD4 cluster with:
 
 - One load-balancer/dhcp/dns system
 - Three control-plane systems
@@ -67,8 +67,6 @@ directory of the cloned git repository.
 ## Getting the cli tools and preparing
 
 
-
-
 Make some directories to use.
 
     mkdir -p bin tmp ssh_key
@@ -76,32 +74,33 @@ Make some directories to use.
 
 Generating an SSH keypair
 
-    ssh-keygen -o -a 100 -t ed25519 -f ssh_key/id_ed25519  -C "example openshift key"
+    ssh-keygen -o -a 100 -t ed25519 -f ssh_key/id_ed25519  -C "example okd key"
 
 
-Obtaining a **Pull Secret** from the following URI and save it as
-`./tmp/pull-secret.txt`
+Discover the revision of the latest OKD release and set it as a variable we can
+use throughout the rest of the process. If you open another terminal you will
+need to run this again.
 
-- https://cloud.redhat.com/openshift/install/pull-secret
+    export OKD_RELEASE=$(curl --silent "https://api.github.com/repos/openshift/okd/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
 
 Download the installation file on a local computer.
 
 - https://cloud.redhat.com/openshift/install/metal/user-provisioned
 
 
-    curl -Lo tmp/openshift-install-linux.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz
+    wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-install-linux-${OKD_RELEASE}.tar.gz
 
 Extract the installation program and put it somewhere on your PATH.
 
 
-    tar xvf tmp/openshift-install-linux.tar.gz --directory tmp/
+    tar xvf tmp/openshift-install-linux-${OKD_RELEASE}.tar.gz --directory tmp/
     mv tmp/openshift-install bin/
 
 Download and extract the command line tool `oc` in the same place as you put
 the installer.
 
-    curl -Lo tmp/openshift-client-linux.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
-    tar xvf tmp/openshift-client-linux.tar.gz --directory tmp/
+    wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-client-linux-${OKD_RELEASE}.tar.gz
+    tar xvf tmp/openshift-client-linux-${OKD_RELEASE}.tar.gz --directory tmp/
     mv tmp/{oc,kubectl} bin/
 
 
@@ -118,8 +117,9 @@ If you have used the directory before then you need to remove the old files.
 ## Creating the boot configs
 
 Create an `install-config.yaml` inside the installation directory and customize
-it as per the documentation on https://docs.openshift.com/container-platform/4.4/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
-Note that you need to put your pull secret in there:
+it as per the documentation on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-bare-metal-config-yaml_installing-bare-metal
+Note that you do not need a value for `pullSecret` because that is for the Red
+Hat supported OCP:
 
     cat <<-EOF > webroot/os_ignition/install-config.yaml
     apiVersion: v1
@@ -144,7 +144,7 @@ Note that you need to put your pull secret in there:
     platform:
       none: {}
     fips: false
-    pullSecret: '$(cat tmp/pull-secret.txt)'
+    pullSecret: ''
     sshKey: '$(cat ssh_key/id_ed25519.pub)'
     EOF
 
