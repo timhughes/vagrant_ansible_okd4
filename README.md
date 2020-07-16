@@ -1,10 +1,9 @@
 # Vagrant > Ansible > OKD4
 
 OKD4 is the upstream community version of Red Hat's OpenShift Container
-Platform. This system which is based on Kubernetes and containers enables you to
-run you own Platform-as-a-Service on your own hardware or deploy it into a cloud
-platform such as Google Cloud or AWS.
-
+Platform. This system,  which is based on Kubernetes and containers, enables you
+to run you own Platform-as-a-Service on your own hardware or deploy it into a
+cloud platform such as Google Cloud or AWS.
 
 These instructions are based on https://docs.okd.io/latest/installing/installing_bare_metal/installing-bare-metal.html#installation-requirements-user-infra_installing-bare-metal
 
