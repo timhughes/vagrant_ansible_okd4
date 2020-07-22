@@ -94,10 +94,9 @@ need to run this again.
 Download the installation file on a local computer.
 
 - https://github.com/openshift/okd/releases
-
-
-    wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-install-linux-${OKD_RELEASE}.tar.gz
-
+```
+wget -c -LP tmp/ https://github.com/openshift/okd/releases/download/${OKD_RELEASE}/openshift-install-linux-${OKD_RELEASE}.tar.gz
+```
 Extract the installation program and put it somewhere on your PATH.
 
 
