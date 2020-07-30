@@ -44,7 +44,7 @@ Vagrant.configure("2") do |config|
   config.vm.define :lb, autostart: false do |node|
     node.vm.box = "centos/7"
     node.vm.network :private_network,
-      :libvirt__network_name => 'openshift-internal',
+      :libvirt__network_name => 'okd-internal',
       :libvirt__dhcp_enabled => false,
       :ip => "192.168.100.2"
     node.vm.provider :libvirt do |libvirt|
@@ -59,7 +59,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define :bootstrap, autostart: false do |node|
     node.vm.network :private_network,
-      :libvirt__network_name => 'openshift-internal',
+      :libvirt__network_name => 'okd-internal',
       :libvirt__dhcp_enabled => false,
       :mac => "52:54:00:A8:64:05"  # 192.168.100.5
     node.vm.provider :libvirt do |libvirt|
@@ -80,7 +80,7 @@ Vagrant.configure("2") do |config|
   (0..2).each do |node_num|
     config.vm.define "cp#{node_num}", autostart: false do |node|
       node.vm.network :private_network,
-        :libvirt__network_name => 'openshift-internal',
+        :libvirt__network_name => 'okd-internal',
         :libvirt__dhcp_enabled => false,
         :mac => mac[node_num]
       node.vm.provider :libvirt do |libvirt|
@@ -96,7 +96,7 @@ Vagrant.configure("2") do |config|
   (0..2).each do |node_num|
     config.vm.define "worker#{node_num}", autostart: false do |node|
       node.vm.network :private_network,
-        :libvirt__network_name => 'openshift-internal',
+        :libvirt__network_name => 'okd-internal',
         :libvirt__dhcp_enabled => false
       node.vm.provider :libvirt do |libvirt|
         libvirt.memory = 8192
